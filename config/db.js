@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
-const uri = "mongodb+srv://deepakagrawal2309_db_user:9yRtmmADY5qWfVrv@manasa.dch7p2x.mongodb.net/foodapp?retryWrites=true&w=majority";
+const uri = process.env.MONGO_URI;
+
+if (!uri) {
+  console.error("❌ MONGO_URI is not defined in environment variables");
+  process.exit(1);
+}
 
 const connectDB = async () => {
   try {
