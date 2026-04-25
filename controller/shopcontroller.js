@@ -6,7 +6,7 @@ exports.addShop = async (req, res) => {
   try {
     const { shopName, place, openTime, closeTime, address,owner, isActive } = req.body;
 
-    if (!shopName || !place || !owner) {
+    if (!shopName || !place || !owner || !openTime || !closeTime || !address || !isActive ) {
       return res.status(400).json({
         success: false,
         message: 'All fields are mandatory'

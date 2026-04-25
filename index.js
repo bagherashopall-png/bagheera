@@ -41,9 +41,7 @@ const startServer = async () => {
     
 
     app.listen(PORT, () => {
-      console.log(`🔥 Server running on http://localhost:${PORT}`);
-       //console.log(`🔥 Server running on http://10.79.167.180:${PORT}`);
-    });
+      console.log(`🔥 Server running on http://localhost:${PORT}`);    });
 
   } catch (error) {
     console.error('❌ Failed to start server:', error);
