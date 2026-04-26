@@ -3,8 +3,6 @@ const imagePath = "/uploads/category/";
 const uploadToFirebase = require('../util/firebaseUpload');
 const deleteFromFirebase = require('../util/firebaseDelete');
 
-
-
 exports.addCategory = async (req, res) => {
   try {
     const { name } = req.body;
