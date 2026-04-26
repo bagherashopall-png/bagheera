@@ -16,6 +16,8 @@ exports.addCategory = async (req, res) => {
 
     const result = await uploadToFirebase(req.file, 'category');
 
+    console.log('result',result);
+
     const newCategory = new Category({
       name,
       image: image 
