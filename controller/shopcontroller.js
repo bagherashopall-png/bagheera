@@ -1,5 +1,7 @@
 const Shop = require('../modal/shopmanage');
 const imagePath = "/uploads/shops/";
+const uploadToFirebase = require('../util/firebaseUpload');
+const deleteFromFirebase = require('../util/firebaseDelete');
 
 // CREATE
 exports.addShop = async (req, res) => {
