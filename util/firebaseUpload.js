@@ -1,29 +1,39 @@
 const { bucket } = require('../config/firebase');
+const compressImage = require('./imageCompress');
 
-const uploadToFirebase = (file, folder = 'common') => {
-  return new Promise((resolve, reject) => {
-    if (!file) return reject('No file provided');
-    if (!bucket) return reject('Firebase bucket not initialized');
+const uploadToFirebase = async (file, folder = 'common') => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!file) return reject('No file provided');
 
-    const fileName = Date.now() + '-' + file.originalname;
-    const fileUpload = bucket.file(`${folder}/${fileName}`);
+      // 🔥 compress image before upload
+      const compressed = await compressImage(file);
 
-    const stream = fileUpload.createWriteStream({
-      metadata: {
-        contentType: file.mimetype
-      }
-    });
+      const fileName = Date.now() + '-' + file.originalname;
 
-    stream.on('error', (err) => {
+      const fileUpload = bucket.file(`${folder}/${fileName}`);
+
+      const stream = fileUpload.createWriteStream({
+        metadata: {
+          contentType: compressed.mimetype
+        }
+      });
+
+      stream.on('error', (err) => reject(err.message));
+
+      stream.on('finish', async () => {
+		 
+		 await fileUpload.makePublic();
+
+        const url = `https://storage.googleapis.com/${bucket.name}/${folder}/${fileName}`;
+        resolve({ url, fileName });
+      });
+
+      stream.end(compressed.buffer);
+
+    } catch (err) {
       reject(err.message);
-    });
-
-    stream.on('finish', async () => {
-      const url = `https://storage.googleapis.com/${bucket.name}/${folder}/${fileName}`;
-      resolve({ url, fileName });
-    });
-
-    stream.end(file.buffer);
+    }
   });
 };
 

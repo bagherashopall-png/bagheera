@@ -55,11 +55,28 @@ exports.getAllCategories = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   try {
     const { name } = req.body;
+	
+    const category = await Category.findById(req.params.id);
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+	
     let updateData = { name };
-    if (req.file) {
+	
+	 if (req.file) {
+		 
       const result = await uploadToFirebase(req.file, 'category');
+
+      if (category.image) {
+        await deleteFromFirebase(category.image);
+      }
       updateData.image = result.url;
     }
+
     const updated = await Category.findByIdAndUpdate(
       req.params.id,
       updateData,

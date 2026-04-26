@@ -53,15 +53,32 @@ exports.getShops = async (req, res) => {
   
 };
 
-// UPDATE
-exports.updateShop = async (req, res) => { 
-   try {
+
+exports.updateShop = async (req, res) => {
+  try {
     const { name } = req.body;
+
+    const existingShop = await Shop.findById(req.params.id);
+
+    if (!existingShop) {
+      return res.status(404).json({
+        success: false,
+        message: "Shop not found"
+      });
+    }
+
     let updateData = { name };
+
+    // 🔥 image update
     if (req.file) {
       const result = await uploadToFirebase(req.file, 'shop');
+
+      if (existingShop.image) {
+        await deleteFromFirebase(existingShop.image);
+      }
       updateData.image = result.url;
     }
+
     const updated = await Shop.findByIdAndUpdate(
       req.params.id,
       updateData,

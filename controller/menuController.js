@@ -95,21 +95,48 @@ exports.getMenu = async (req, res) => {
 
 exports.updateMenu = async (req, res) => {
   try {
-    let updateData = req.body;
+    const existingMenu = await Menu.findById(req.params.id);
+
+    if (!existingMenu) {
+      return res.status(404).json({
+        success: false,
+        message: "Menu not found"
+      });
+    }
+
+    let updateData = { ...req.body };
+
     // 🔥 image update
     if (req.file) {
-	 const result = await uploadToFirebase(req.file, 'menu');
+      // 1. Upload new image
+      const result = await uploadToFirebase(req.file, 'menu');
+
+      // 2. Delete old image
+      if (existingMenu.image) {
+        await deleteFromFirebase(existingMenu.image);
+      }
+
+      // 3. Set new image
       updateData.image = result.url;
     }
+
     // 🔥 seller edit → re-approval
     if (req.body.type === 'seller') {
       updateData.isApproved = 'pending';
     }
-    await Menu.findByIdAndUpdate(req.params.id, updateData);
+
+    const updatedMenu = await Menu.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
     res.json({
       success: true,
-      message: 'Menu Updated'
+      message: 'Menu Updated',
+      data: updatedMenu
     });
+
   } catch (err) {
     res.status(500).json({
       success: false,
@@ -117,7 +144,6 @@ exports.updateMenu = async (req, res) => {
     });
   }
 };
-
 exports.deleteMenu = async (req, res) => {
   try {
 	  
