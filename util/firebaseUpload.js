@@ -6,7 +6,7 @@ const uploadToFirebase = (file, folder = 'common') => {
     if (!bucket) return reject('Firebase bucket not initialized');
 
     const fileName = Date.now() + '-' + file.originalname;
-console.log('fileName'fileName);
+console.log('fileName',fileName);
     const fileUpload = bucket.file(`${folder}/${fileName}`);
 
     const stream = fileUpload.createWriteStream({
