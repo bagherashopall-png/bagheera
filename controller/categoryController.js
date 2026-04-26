@@ -1,11 +1,14 @@
-const imagePath = "/uploads/category/";
 const Category = require('../modal/category');
-const { bucket } = require('../config/firebase'); // 👈 your file path
+const imagePath = "/uploads/category/";
+const uploadToFirebase = require('../util/firebaseUpload');
+const deleteFromFirebase = require('../util/firebaseDelete');
+
+
 
 exports.addCategory = async (req, res) => {
   try {
     const { name } = req.body;
-	
+
     if (!name || !req.file) {
       return res.status(400).json({
         success: false,
@@ -13,46 +16,18 @@ exports.addCategory = async (req, res) => {
       });
     }
 
-    const fileName = Date.now() + '-' + req.file.originalname;
-	
+    const result = await uploadToFirebase(req.file, 'category');
 
-    const file = bucket.file(`category/${fileName}`);
-	
-    const stream = file.createWriteStream({
-      metadata: {
-        contentType: req.file.mimetype
-      }
+    const newCategory = new Category({
+      name,
+      image: image 
     });
-	
-	
-    stream.on('error', (err) => {
-		console.log('err.message',err.message);
-      return res.status(500).json({
-        success: false,
-        message: err.message
-      });
+    await newCategory.save();
+    res.status(201).json({
+      success: true,
+      message: "Category added successfully",
+      data: newCategory
     });
-
-    stream.on('finish', async () => {
-      // ✅ Generate public URL (NO makePublic needed)
-      const imageUrl = `https://storage.googleapis.com/${bucket.name}/category/${fileName}`;
-
-      const newCategory = new Category({
-        name,
-        image: imageUrl
-      });
-
-      await newCategory.save();
-
-      res.status(201).json({
-        success: true,
-        message: "Category added successfully",
-        data: newCategory
-      });
-    });
-
-    stream.end(req.file.buffer);
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -84,8 +59,8 @@ exports.updateCategory = async (req, res) => {
     const { name } = req.body;
     let updateData = { name };
     if (req.file) {
-      const image = imagePath+`${req.file.filename}`;
-      updateData.image = image;
+      const result = await uploadToFirebase(req.file, 'category');
+      updateData.image = result.url;
     }
     const updated = await Category.findByIdAndUpdate(
       req.params.id,
@@ -108,10 +83,21 @@ exports.updateCategory = async (req, res) => {
   }
 };
 
-// DELETE /category/delete/:id
 exports.deleteCategory = async (req, res) => {
   try {
+    const category = await Category.findById(req.params.id);
 
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+
+    // 🔥 delete image using helper
+    await deleteFromFirebase(category.image);
+
+    // delete DB record
     await Category.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
