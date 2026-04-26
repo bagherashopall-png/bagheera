@@ -20,7 +20,7 @@ exports.addCategory = async (req, res) => {
 
     const newCategory = new Category({
       name,
-      image: image 
+      image: result.url 
     });
     await newCategory.save();
     res.status(201).json({
