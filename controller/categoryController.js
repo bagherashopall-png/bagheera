@@ -1,10 +1,12 @@
-const Category = require('../modal/category');
 const imagePath = "/uploads/category/";
-
+const Category = require('../modal/category');
+const { bucket } = require('../config/firebase'); // 👈 your file path
 
 exports.addCategory = async (req, res) => {
   try {
     const { name } = req.body;
+	
+	console.log('req',req.file);
 
     if (!name || !req.file) {
       return res.status(400).json({
@@ -12,18 +14,50 @@ exports.addCategory = async (req, res) => {
         message: "Name and Image are required"
       });
     }
-    const image = imagePath+`${req.file.filename}`;
 
-    const newCategory = new Category({
-      name,
-      image: image 
+    const fileName = Date.now() + '-' + req.file.originalname;
+	
+	console.log('fileName',fileName);
+
+    const file = bucket.file(`category/${fileName}`);
+	
+	console.log('file',file);
+
+    const stream = file.createWriteStream({
+      metadata: {
+        contentType: req.file.mimetype
+      }
     });
-    await newCategory.save();
-    res.status(201).json({
-      success: true,
-      message: "Category added successfully",
-      data: newCategory
+	
+	console.log('stream',stream);
+
+    stream.on('error', (err) => {
+      return res.status(500).json({
+        success: false,
+        message: err.message
+      });
     });
+
+    stream.on('finish', async () => {
+      // ✅ Generate public URL (NO makePublic needed)
+      const imageUrl = `https://storage.googleapis.com/${bucket.name}/category/${fileName}`;
+
+      const newCategory = new Category({
+        name,
+        image: imageUrl
+      });
+
+      await newCategory.save();
+
+      res.status(201).json({
+        success: true,
+        message: "Category added successfully",
+        data: newCategory
+      });
+    });
+
+    stream.end(req.file.buffer);
+
   } catch (error) {
     res.status(500).json({
       success: false,

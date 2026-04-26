@@ -12,6 +12,7 @@ const settingRoutes = require('./route/settingroute');
 const orderRoute = require('./route/order.route');
 const PORT = process.env.PORT || 3000;
 app.use('/uploads', express.static('uploads'));
+
 app.use(cors({
   origin: '*', // later replace with your frontend domain
 }));
