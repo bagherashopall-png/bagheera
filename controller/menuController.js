@@ -5,7 +5,7 @@ exports.addMenu = async (req, res) => {
   try {
 
     let shopId = '';
-
+	
     // 🔥 seller vs admin logic
     if (req.body.type === 'seller') {
       shopId = req.body.shopID;
@@ -22,14 +22,14 @@ exports.addMenu = async (req, res) => {
         message: 'All fields are mandatory'
       });
     }
-
-    // ✅ safe image
+	
     let imageUrl = '';
     if (req.file) {
       imageUrl = imagePath+`${req.file.filename}`;
     }
+	
+	const result = await uploadToFirebase(req.file, 'menu');
 
-    // 🔥 create menu
     const menu = new Menu({
       shop: shopId,          // ✅ IMPORTANT (match schema)
       category,
@@ -38,7 +38,7 @@ exports.addMenu = async (req, res) => {
       minQty,
       qty,
       isActive,
-      image: imageUrl,
+      image: result.url,
 
       // 🔥 seller approval logic
       isApproved: req.body.type === 'seller' ? 'pending' : 'approved'
@@ -96,7 +96,8 @@ exports.updateMenu = async (req, res) => {
     let updateData = req.body;
     // 🔥 image update
     if (req.file) {
-      updateData.image = imagePath+`${req.file.filename}`;
+	 const result = await uploadToFirebase(req.file, 'menu');
+      updateData.image = result.url;
     }
     // 🔥 seller edit → re-approval
     if (req.body.type === 'seller') {
@@ -117,8 +118,18 @@ exports.updateMenu = async (req, res) => {
 
 exports.deleteMenu = async (req, res) => {
   try {
+	  
+	 const menu = await Menu.findById(req.params.id);
 
-    await Menu.findByIdAndDelete(req.params.id);
+    if (!menu) {
+      return res.status(404).json({
+        success: false,
+        message: "menu not found"
+      });
+    }
+    await deleteFromFirebase(menu.image);
+    
+	await Menu.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,

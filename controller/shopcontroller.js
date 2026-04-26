@@ -13,17 +13,13 @@ exports.addShop = async (req, res) => {
       });
     }
 
-    // const openTime = extractTime(req.body.openTime);
-    //const closeTime = extractTime(req.body.closeTime);
-
-    const imageUrl = imagePath+`${req.file.filename}`;
+    const result = await uploadToFirebase(req.file, 'shop');
 
     const newshopCat = new Shop({
       shopName,
       place, owner, openTime, closeTime, address,isActive,
-      image: imageUrl
+      image: result.url 
     });
-
 
     await newshopCat.save();
 
@@ -52,27 +48,69 @@ exports.getShops = async (req, res) => {
     success: true,
     data: shops
   });
+  
 };
 
 // UPDATE
-exports.updateShop = async (req, res) => {
-  await Shop.findByIdAndUpdate(req.params.id, req.body);
-  res.status(200).json({
-    success: true,
-    message: 'Updated'
-  });
+exports.updateShop = async (req, res) => { 
+   try {
+    const { name } = req.body;
+    let updateData = { name };
+    if (req.file) {
+      const result = await uploadToFirebase(req.file, 'shop');
+      updateData.image = result.url;
+    }
+    const updated = await Shop.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Updated",
+      data: updated
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating",
+      error: error.message
+    });
+  }
 };
 
 // DELETE
 exports.deleteShop = async (req, res) => {
-  await Shop.findByIdAndDelete(req.params.id);
+   try {
+    const category = await Shop.findById(req.params.id);
 
-  res.status(200).json({
-    success: true,
-    message: 'Deleted'
-  });
-};
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+    await deleteFromFirebase(category.image);
 
+    // delete DB record
+    await Shop.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Deleted"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error deleting",
+      error: error.message
+    });
+  }
+}
+  
 function extractTime(dateString) {
   if (!dateString) return '';
 

@@ -16,8 +16,6 @@ exports.addCategory = async (req, res) => {
 
     const result = await uploadToFirebase(req.file, 'category');
 
-    console.log('result',result);
-
     const newCategory = new Category({
       name,
       image: result.url 
@@ -93,8 +91,6 @@ exports.deleteCategory = async (req, res) => {
         message: "Category not found"
       });
     }
-
-    // 🔥 delete image using helper
     await deleteFromFirebase(category.image);
 
     // delete DB record
