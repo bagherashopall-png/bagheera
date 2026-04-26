@@ -21,8 +21,6 @@ exports.addCategory = async (req, res) => {
 
     const file = bucket.file(`category/${fileName}`);
 	
-	console.log('file',file);
-
     const stream = file.createWriteStream({
       metadata: {
         contentType: req.file.mimetype
@@ -32,6 +30,7 @@ exports.addCategory = async (req, res) => {
 	console.log('stream',stream);
 
     stream.on('error', (err) => {
+		console.log('err.message',err.message);
       return res.status(500).json({
         success: false,
         message: err.message
