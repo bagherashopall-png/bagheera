@@ -6,8 +6,6 @@ exports.addCategory = async (req, res) => {
   try {
     const { name } = req.body;
 	
-	console.log('req',req.file);
-
     if (!name || !req.file) {
       return res.status(400).json({
         success: false,
@@ -17,7 +15,6 @@ exports.addCategory = async (req, res) => {
 
     const fileName = Date.now() + '-' + req.file.originalname;
 	
-	console.log('fileName',fileName);
 
     const file = bucket.file(`category/${fileName}`);
 	
@@ -27,8 +24,7 @@ exports.addCategory = async (req, res) => {
       }
     });
 	
-	console.log('stream',stream);
-
+	
     stream.on('error', (err) => {
 		console.log('err.message',err.message);
       return res.status(500).json({

@@ -12,8 +12,9 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + '-' + cleanName);
   }
 });
-
-const upload = multer({ storage });
+const upload = multer({
+  storage: multer.memoryStorage() // 👈 IMPORTANT
+});
 
 // ✅ Route with multer
 router.post('/add', upload.single('image'), categoryController.addCategory);
@@ -25,3 +26,4 @@ router.put('/update/:id', upload.single('image'), categoryController.updateCateg
 router.delete('/delete/:id',categoryController.deleteCategory);
 
 module.exports = router;
+
