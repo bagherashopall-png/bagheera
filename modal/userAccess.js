@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['admin', 'seller', 'delivery']
   },
+  otp: String,
+  otpExpiry: Date,
   createdAt: {
     type: Date,
     default: Date.now

@@ -3,6 +3,8 @@ const loginUserModel = require('../modal/user');
 const bcrypt = require('bcrypt');
 const Shop = require('../modal/shopmanage');
 const jwt = require('jsonwebtoken');
+//const users = require('../models/user');
+
 
 
 exports.addUser = async (req, res) => {
@@ -289,4 +291,122 @@ exports.savetoken = async (req, res) => {
   });
 
   res.json({ success: true });
+};
+
+// 🔹 Check Merchant
+exports.checkMerchant = async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+console.log('userId',userId);
+    const user = await userModel.findOne({ userID: userId });
+
+    return res.json({ exists: !!user });
+
+  } catch (err) {
+    return res.status(500).json({ exists: false });
+  }
+};
+
+exports.sendOtp = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    console.log('userId:', userId);
+
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+
+    const user = await userModel.findOne({ userID: userId });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+    user.otp = otp;
+    user.otpExpiry = Date.now() + 5 * 60 * 1000;
+
+    await user.save(); // ✅ FIXED
+
+    console.log("OTP:", otp);
+
+    res.json({ message: 'OTP sent' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.verifyOtp = async (req, res) => {
+  try {
+    const { userId, otp } = req.body;
+
+    console.log('BODY:', req.body);
+
+    if (!userId || !otp) {
+      return res.status(400).json({ valid: false, message: 'userId & otp required' });
+    }
+
+    const user = await userModel.findOne({ userID: userId });
+
+    if (!user) {
+      return res.status(404).json({ valid: false, message: 'User not found' });
+    }
+
+    // ❌ OTP mismatch
+    if (user.otp !== otp) {
+      return res.json({ valid: false, message: 'Invalid OTP' });
+    }
+
+    // ❌ OTP expired
+    if (!user.otpExpiry || Date.now() > user.otpExpiry) {
+      return res.json({ valid: false, message: 'OTP expired' });
+    }
+
+    // ✅ Success
+    return res.json({ valid: true });
+
+  } catch (err) {
+    console.error('verifyOtp error:', err);
+    return res.status(500).json({ valid: false, message: 'Server error' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { userId, password } = req.body;
+
+    console.log('BODY:', req.body);
+
+    if (!userId || !password) {
+      return res.status(400).json({ message: 'userId & password required' });
+    }
+
+    const user = await userModel.findOne({ userID: userId });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // 🔐 Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user.password = hashedPassword;
+
+    // 🔥 clear OTP after success
+    user.otp = null;
+    user.otpExpiry = null;
+
+    await user.save();
+
+    return res.json({ message: 'Password updated successfully' });
+
+  } catch (err) {
+    console.error('resetPassword error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
 };

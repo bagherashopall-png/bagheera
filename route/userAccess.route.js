@@ -22,5 +22,12 @@ router.post('/removeAddress/:id',userAccessController.removeAddress);
 
 router.post('/save-token',userAccessController.savetoken);
 
+router.get('/checkMerchant',userAccessController.checkMerchant);
+
+router.post('/sendOtp', userAccessController.sendOtp);
+
+router.post('/verifyOtp', userAccessController.verifyOtp);
+
+router.post('/resetPassword', userAccessController.resetPassword);
 
 module.exports = router;
